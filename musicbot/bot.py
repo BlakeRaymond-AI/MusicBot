@@ -847,6 +847,39 @@ class MusicBot(discord.Client):
         except:
             raise exceptions.CommandError('Invalid URL provided:\n{}\n'.format(server_link), expire_in=30)
 
+    async def cmd_bigcreepy(self, player, channel, author, permissions, leftover_args):
+        await self.cmd_playfolder(player, channel, author, permissions, leftover_args, 'big creepy')
+
+    async def cmd_bossbattle(self, player, channel, author, permissions, leftover_args):
+        await self.cmd_playfolder(player, channel, author, permissions, leftover_args, 'boss battle')
+
+    async def cmd_creepy(self, player, channel, author, permissions, leftover_args):
+        await self.cmd_playfolder(player, channel, author, permissions, leftover_args, 'creepy')
+
+    async def cmd_mysterious(self, player, channel, author, permissions, leftover_args):
+        await self.cmd_playfolder(player, channel, author, permissions, leftover_args, 'mysterious')
+
+    async def cmd_peaceful(self, player, channel, author, permissions, leftover_args):
+        await self.cmd_playfolder(player, channel, author, permissions, leftover_args, 'peaceful')
+
+    async def cmd_smallbattle(self, player, channel, author, permissions, leftover_args):
+        await self.cmd_playfolder(player, channel, author, permissions, leftover_args, 'small battle')
+
+    async def cmd_tavern(self, player, channel, author, permissions, leftover_args):
+        await self.cmd_playfolder(player, channel, author, permissions, leftover_args, 'tavern')
+
+    async def cmd_temple(self, player, channel, author, permissions, leftover_args):
+        await self.cmd_playfolder(player, channel, author, permissions, leftover_args, 'temple')
+
+    async def cmd_townday(self, player, channel, author, permissions, leftover_args):
+        await self.cmd_playfolder(player, channel, author, permissions, leftover_args, 'town - day')
+
+    async def cmd_townnight(self, player, channel, author, permissions, leftover_args):
+        await self.cmd_playfolder(player, channel, author, permissions, leftover_args, 'town - night')
+
+    async def cmd_underground(self, player, channel, author, permissions, leftover_args):
+        await self.cmd_playfolder(player, channel, author, permissions, leftover_args, 'underground')
+
     async def cmd_playfolder(self, player, channel, author, permissions, leftover_args, folder_name):
         await self.send_typing(channel)
 
