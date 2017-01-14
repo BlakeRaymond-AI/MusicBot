@@ -38,6 +38,10 @@ from .constants import DISCORD_MSG_CHAR_LIMIT, AUDIO_CACHE_PATH
 load_opus_lib()
 
 
+SUPPORTED_FILE_EXTENSIONS = ['.mp3']
+ROOT_MUSIC_FOLDER = r'C:\Users\Blake\documents\dnd\music'
+
+
 class SkipState:
     def __init__(self):
         self.skippers = set()
@@ -841,6 +845,31 @@ class MusicBot(discord.Client):
 
         except:
             raise exceptions.CommandError('Invalid URL provided:\n{}\n'.format(server_link), expire_in=30)
+
+    async def cmd_playfolder(self, player, channel, author, permissions, leftover_args, folder_name):
+        await self.send_typing(channel)
+
+        folder_path = os.path.join(ROOT_MUSIC_FOLDER, folder_name)
+
+        if not os.path.exists(folder_path):
+            return Response(r"Could not find path: {}".format(folder_path), delete_after=30)
+
+        music_files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_name, f))
+                       and os.path.splitext(f)[1] in SUPPORTED_FILE_EXTENSIONS]
+
+        if not music_files:
+            return Response(r"Couldn't find any files in {}".format(len(music_files), folder_name), delete_after=30)
+
+        player.stop()
+        player.playlist.clear()
+
+        for f in music_files:
+            await player.playlist.add_entry(f, channel=channel, author=author)
+
+        player.playlist.shuffle()
+        player.playlist.play()
+
+        return Response('Queued up {} files to play from {}'.format(len(music_files), folder_name), delete_after=30)
 
     async def cmd_play(self, player, channel, author, permissions, leftover_args, song_url):
         """

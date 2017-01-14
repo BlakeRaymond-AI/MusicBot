@@ -1,13 +1,80 @@
 import datetime
 import traceback
+import os.path
 from collections import deque
 from itertools import islice
 from random import shuffle
 
 from .utils import get_header
-from .entry import URLPlaylistEntry
+from .entry import URLPlaylistEntry, FilePlaylistEntry
 from .exceptions import ExtractionError, WrongEntryTypeError
 from .lib.event_emitter import EventEmitter
+
+
+class FilePlaylist(EventEmitter):
+    def __init__(self):
+        super().__init__()
+        self.entries = deque()
+
+    def __iter__(self):
+        return iter(self.entries)
+
+    def shuffle(self):
+        shuffle(self.entries)
+
+    def clear(self):
+        self.entries.clear()
+
+    async def add_entry(self, file_name):
+        if not os.path.isfile(file_name):
+            raise ExtractionError('Path is not a valid file: {}'.format(file_name))
+
+        entry = FilePlaylistEntry(file_name)
+        self._add_entry(entry)
+        return entry, len(self.entries)
+
+    def _add_entry(self, entry):
+        self.entries.append(entry)
+        self.emit('entry-added', playlist=self, entry=entry)
+
+        if self.peek() is entry:
+            entry.get_ready_future()
+
+    async def get_next_entry(self, predownload_next=True):
+        """
+            A coroutine which will return the next song or None if no songs left to play.
+
+            Additionally, if predownload_next is set to True, it will attempt to download the next
+            song to be played - so that it's ready by the time we get to it.
+        """
+        if not self.entries:
+            return None
+
+        entry = self.entries.popleft()
+
+        return await entry.get_ready_future()
+
+    def peek(self):
+        """
+            Returns the next entry that should be scheduled to be played.
+        """
+        if self.entries:
+            return self.entries[0]
+
+    async def estimate_time_until(self, position, player):
+        """
+            (very) Roughly estimates the time till the queue will 'position'
+        """
+        estimated_time = sum([e.duration for e in islice(self.entries, position - 1)])
+
+        # When the player plays a song, it eats the first playlist item, so we just have to add the time back
+        if not player.is_stopped and player.current_entry:
+            estimated_time += player.current_entry.duration - player.progress
+
+        return datetime.timedelta(seconds=estimated_time)
+
+    def count_for_user(self, user):
+        return sum(1 for e in self.entries if e.meta.get('author', None) == user)
 
 
 class Playlist(EventEmitter):

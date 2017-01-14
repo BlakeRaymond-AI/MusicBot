@@ -234,4 +234,20 @@ class URLPlaylistEntry(BasePlaylistEntry):
                 os.rename(unhashed_fname, self.filename)
 
 
+class FilePlaylistEntry(BasePlaylistEntry):
+    def _download(self):
+        pass
 
+    def to_json(self):
+        data = {'filename': self.filename}
+        return json.dumps(data, indent=2)
+
+    @classmethod
+    def from_json(cls, playlist, jsonstring):
+        data = json.loads(jsonstring)
+        filename = data['filename']
+        return cls(filename)
+
+    def __init__(self, filename):
+        super().__init__()
+        self.filename = filename
