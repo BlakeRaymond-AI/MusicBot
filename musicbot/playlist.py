@@ -14,7 +14,8 @@ from .lib.event_emitter import EventEmitter
 class FilePlaylist(EventEmitter):
     def __init__(self):
         super().__init__()
-        self.entries = deque()
+        self.entries = list()
+        self.index = 0
 
     def __iter__(self):
         return iter(self.entries)
@@ -25,11 +26,11 @@ class FilePlaylist(EventEmitter):
     def clear(self):
         self.entries.clear()
 
-    async def add_entry(self, file_name):
-        if not os.path.isfile(file_name):
-            raise ExtractionError('Path is not a valid file: {}'.format(file_name))
+    async def add_entry(self, file_path):
+        if not os.path.isfile(file_path):
+            raise ExtractionError('Path is not a valid file: {}'.format(file_path))
 
-        entry = FilePlaylistEntry(file_name)
+        entry = FilePlaylistEntry(self, file_path)
         self._add_entry(entry)
         return entry, len(self.entries)
 
@@ -50,7 +51,9 @@ class FilePlaylist(EventEmitter):
         if not self.entries:
             return None
 
-        entry = self.entries.popleft()
+        self.index += 1
+        self.index %= len(self.entries)
+        entry = self.entries[self.index]
 
         return await entry.get_ready_future()
 
@@ -59,7 +62,7 @@ class FilePlaylist(EventEmitter):
             Returns the next entry that should be scheduled to be played.
         """
         if self.entries:
-            return self.entries[0]
+            return self.entries[self.index]
 
     async def estimate_time_until(self, position, player):
         """

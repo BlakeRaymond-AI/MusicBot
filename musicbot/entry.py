@@ -248,6 +248,13 @@ class FilePlaylistEntry(BasePlaylistEntry):
         filename = data['filename']
         return cls(filename)
 
-    def __init__(self, filename):
+    def __init__(self, playlist, filepath):
         super().__init__()
-        self.filename = filename
+        self.filename = filepath
+        filename_ext = os.path.split(filepath)[1]
+        filename = os.path.splitext(filename_ext)[0]
+        self.title = filename
+        self.playlist = playlist
+        self.duration = 0
+        self.expected_filename = filepath
+        self.meta = {}

@@ -22,7 +22,7 @@ from datetime import timedelta
 from random import choice, shuffle
 from collections import defaultdict
 
-from musicbot.playlist import Playlist
+from musicbot.playlist import Playlist, FilePlaylist
 from musicbot.player import MusicPlayer
 from musicbot.config import Config, ConfigDefaults
 from musicbot.permissions import Permissions, PermissionsDefaults
@@ -365,7 +365,8 @@ class MusicBot(discord.Client):
 
             voice_client = await self.get_voice_client(channel)
 
-            playlist = Playlist(self)
+            playlist = FilePlaylist()
+            # playlist = Playlist(self)
             player = MusicPlayer(self, voice_client, playlist) \
                 .on('play', self.on_player_play) \
                 .on('resume', self.on_player_resume) \
@@ -849,25 +850,27 @@ class MusicBot(discord.Client):
     async def cmd_playfolder(self, player, channel, author, permissions, leftover_args, folder_name):
         await self.send_typing(channel)
 
+        if leftover_args:
+            folder_name = ' '.join([folder_name, *leftover_args])
+
         folder_path = os.path.join(ROOT_MUSIC_FOLDER, folder_name)
 
         if not os.path.exists(folder_path):
             return Response(r"Could not find path: {}".format(folder_path), delete_after=30)
 
-        music_files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_name, f))
+        music_files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))
                        and os.path.splitext(f)[1] in SUPPORTED_FILE_EXTENSIONS]
 
         if not music_files:
-            return Response(r"Couldn't find any files in {}".format(len(music_files), folder_name), delete_after=30)
+            return Response(r"Could not find any files in folder: {}".format(folder_name), delete_after=30)
 
         player.stop()
         player.playlist.clear()
 
         for f in music_files:
-            await player.playlist.add_entry(f, channel=channel, author=author)
+            await player.playlist.add_entry(os.path.join(folder_path, f))
 
         player.playlist.shuffle()
-        player.playlist.play()
 
         return Response('Queued up {} files to play from {}'.format(len(music_files), folder_name), delete_after=30)
 
